@@ -9,6 +9,10 @@ def check_vertical_wall_intersect(pos1, pos2, wall_x, hole_y, door_space):
     if check_intersection:
         # print("found intersection at", i, j.item())
         d = pos2 - pos1
+        if d[0] == 0:
+            # exactly vertical motion cannot cross a vertical line; the slope below
+            # would be inf and y = NaN (axis-aligned discrete actions hit this)
+            return None
         # a and b are the line parameters fit to the last step
         a = d[1] / d[0]
         b = pos1[1] - a * pos1[0]
@@ -31,9 +35,14 @@ def check_horizontal_wall_intersect(pos1, pos2, wall_y, hole_x, door_space):
     ) <= 0.1
     if check_intersection:
         d = pos2 - pos1
-        a = d[1] / d[0]
-        b = pos1[1] - a * pos1[0]
-        x = (wall_y - b) / a
+        if d[1] == 0:
+            return None  # exactly horizontal motion cannot cross a horizontal line
+        if d[0] == 0:
+            x = pos1[0]  # exactly vertical motion: the crossing is at the same x
+        else:
+            a = d[1] / d[0]
+            b = pos1[1] - a * pos1[0]
+            x = (wall_y - b) / a
         if (
             hole_x is None or x < hole_x - door_space or x > hole_x + door_space
         ):  # we're not in the hole

@@ -3,7 +3,7 @@ args: []
 kwargs: {}
 
 dataset:
-  _target_: "datasets.wall_dset.load_wall_slice_train_val"
+  _target_: "datasets.wall_dset.load_wall_slice_train_val"   # train_coverage overrides this
   n_rollout: null
   normalize_action: ${normalize_action}
   data_path: ${oc.env:DATASET_DIR}/wall_single

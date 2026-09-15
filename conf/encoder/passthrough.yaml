@@ -1,0 +1,4 @@
+_target_: models.passthrough_encoder.PassthroughEncoder
+emb_dim: 384
+patch_size: 14
+name: "cached_latents"

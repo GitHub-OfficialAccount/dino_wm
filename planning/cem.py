@@ -61,6 +61,18 @@ class CEMPlanner(BasePlanner):
             mu = torch.cat([mu, new_mu.to(device)], dim=1)
         return mu, sigma
 
+    def _record_candidates(self, traj, opt_step, action, loss, topk_idx):
+        """Hook for instrumentation. No-op in the baseline planner.
+
+        Args:
+            traj: int, index of the eval instance
+            opt_step: int, CEM iteration
+            action: (num_samples, horizon, action_dim) sampled candidates
+            loss: (num_samples,) imagined objective, lower is better
+            topk_idx: (topk,) indices of the elite set, best first
+        """
+        pass
+
     def plan(self, obs_0, obs_g, actions=None):
         """
         Args:
@@ -112,6 +124,7 @@ class CEMPlanner(BasePlanner):
 
                 loss = self.objective_fn(i_z_obses, cur_z_obs_g)
                 topk_idx = torch.argsort(loss)[: self.topk]
+                self._record_candidates(traj, i, action, loss, topk_idx)
                 topk_action = action[topk_idx]
                 losses.append(loss[topk_idx[0]].item())
                 mu[traj] = topk_action.mean(dim=0)

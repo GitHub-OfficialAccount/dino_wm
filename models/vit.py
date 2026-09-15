@@ -55,7 +55,10 @@ class Attention(nn.Module):
             nn.Linear(inner_dim, dim),
             nn.Dropout(dropout)
         ) if project_out else nn.Identity()
-        self.bias = generate_mask_matrix(NUM_PATCHES, NUM_FRAMES).to('cuda')
+        # Causal mask on the device the module lives on, not hard-coded to CUDA, so a fresh
+        # predictor can be built on CPU (local smoke tests). Non-persistent: checkpoints are
+        # unchanged and old ones still load.
+        self.register_buffer("bias", generate_mask_matrix(NUM_PATCHES, NUM_FRAMES), persistent=False)
 
     def forward(self, x):
         (

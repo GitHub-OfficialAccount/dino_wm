@@ -1,0 +1,71 @@
+# Coverage-sweep retrain (stage-2-coverage-sweep-outline.md §3.2): train.yaml minus the submitit
+# launcher, with the release's settings and cached DINO latents in place of the encoder.
+defaults:
+  - _self_
+  - env: wall
+  - encoder: passthrough
+  - action_encoder: proprio
+  - proprio_encoder: proprio
+  - decoder: vqvae
+  - predictor: vit
+
+# base path to save model outputs. Checkpoints will be saved to ${ckpt_base_path}/outputs.
+ckpt_base_path: ./ # put absolute path here
+
+hydra:
+  run:
+    dir: ${ckpt_base_path}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ${ckpt_base_path}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+
+training:
+  seed: 0
+  epochs: 65          # the released checkpoint's epoch
+  batch_size: 128     # the release's effective batch
+  save_every_x_epoch: 5
+  reconstruct_every_x_batch: 500
+  num_reconstruct_samples: 6
+  encoder_lr: 1e-6
+  decoder_lr: 3e-4
+  predictor_lr: 5e-4
+  action_encoder_lr: 5e-4
+
+img_size: 224 # should be a multiple of 224
+frameskip: 5
+concat_dim: 1
+
+normalize_action: True
+
+# action encoder
+action_emb_dim: 10
+num_action_repeat: 1
+
+# proprio encoder
+proprio_emb_dim: 10 
+num_proprio_repeat: 1
+
+num_hist: 1
+num_pred: 1 # only supports 1
+has_predictor: True # set this to False for only training a decoder
+has_decoder: False   # we never decode; the decoder trains on detached latents anyway
+
+model:
+  _target_: models.visual_world_model.VWorldModel
+  image_size: ${img_size}
+  num_hist: ${num_hist}
+  num_pred: ${num_pred}
+  train_encoder: False
+  train_predictor: True
+  train_decoder: False   # no decoder in the coverage sweep
+
+debug: False 
+
+# Planning params for planning eval jobs launched during training
+plan_settings: 
+  # plan_cfg_path: conf/plan.yaml # set to null for no planning evals
+  plan_cfg_path: null 
+  planner: ['gd', 'cem']
+  goal_source: ['dset', 'random_state']
+  goal_H: [5]
+  alpha: [0.1, 1]
